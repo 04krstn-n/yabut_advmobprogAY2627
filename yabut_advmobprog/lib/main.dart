@@ -8,6 +8,8 @@ import 'package:provider/provider.dart';
 // screens
 import 'screens/home_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/splash_screen.dart';
+import 'screens/signin_screen.dart';
 
 // providers
 import 'providers/theme_provider.dart';
@@ -43,10 +45,13 @@ class YabutAdvMobProg extends StatelessWidget {
             darkTheme: themeModel.darkTheme,
             themeMode: themeModel.isDark ? ThemeMode.dark : ThemeMode.light,
             title: 'E-Commerce App',
-            initialRoute: '/home',
+            // made the app boot into the SplashScreen first for enhancement 1
+            initialRoute: '/splash',
             routes: {
               '/home': (context) => const HomeScreen(),
               '/settings': (context) => const SettingsScreen(),
+              '/splash': (context) => const SplashScreen(),
+              '/signin': (context) => const SigninScreen(),
             },
           );
         },

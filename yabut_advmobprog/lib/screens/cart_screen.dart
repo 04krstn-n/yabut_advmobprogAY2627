@@ -5,6 +5,7 @@ import '../services/cart_service.dart';
 import 'detail_screen.dart';
 
 // created CartScreen to fetch and render user cart data to comply with enhancement 3
+// userId is now supplied by HomeScreen based on the actually logged-in/saved user for enhancement 3
 class CartScreen extends StatefulWidget {
   final int userId;
   const CartScreen({super.key, this.userId = 5});

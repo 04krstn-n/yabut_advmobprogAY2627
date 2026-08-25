@@ -3,8 +3,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:yabut_advmobprog/constants.dart';
 
 import 'product_screen.dart';
+import 'profile_screen.dart';
 import 'cart_screen.dart';
 import '../widgets/custom_text.dart';
+import '../services/user_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final String username;
@@ -17,9 +19,53 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   final PageController _pageController = PageController();
+  final UserService _userService = UserService();
+
+  // made the userId not hardcoded it is fetched from the saved/logged-in user so CartScreen and ProfileScreen render user's own data for enhancement 3
+  int? _userId;
+  bool _resolvingUser = true;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_resolvingUser) {
+      _resolveUserId();
+    }
+  }
+
+  Future<void> _resolveUserId() async {
+    final args = ModalRoute.of(context)?.settings.arguments;
+    int? resolvedId;
+
+    if (args is Map) {
+      final rawId = args['id'];
+      if (rawId is int) {
+        resolvedId = rawId;
+      } else if (rawId != null) {
+        resolvedId = int.tryParse('$rawId');
+      }
+    }
+
+    resolvedId ??= (await _userService.getUser()).id;
+
+    if (!mounted) return;
+    setState(() {
+      _userId = resolvedId;
+      _resolvingUser = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    // shows a loading state while the logged-in userId is being resolved for enhancement 3
+    if (_resolvingUser) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final userId = _userId ?? 0;
+
     return PopScope(
       canPop: false,
       child: Scaffold(
@@ -49,10 +95,11 @@ class _HomeScreenState extends State<HomeScreen> {
         body: PageView(
           physics: const NeverScrollableScrollPhysics(),
           controller: _pageController,
-          children: const <Widget>[
-            ProductScreen(),
-            CartScreen(userId: 5), // added a cart embedded in bottom navigation for enhancement 1
-            Center(child: Text('Profile Screen')),
+          children: <Widget>[
+            const ProductScreen(),
+            // made it use the resolved logged-in userId to render user's own cart for enhancement 3
+            CartScreen(userId: userId),
+            ProfileScreen(userId: userId),
           ],
           onPageChanged: (page) {
             setState(() {

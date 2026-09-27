@@ -5,8 +5,8 @@ import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/custom_text.dart';
 import '../constants.dart';
+import '../services/user_service.dart';
 
-// added settings page to toggle the switch for Light and Dark mode to comply with enhancement 3
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -54,6 +54,21 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 SizedBox(width: 20.w),
               ],
+            ),
+            const Divider(),
+            ListTile(
+              contentPadding: EdgeInsets.symmetric(horizontal: 30.w),
+              leading: Icon(Icons.logout, size: 25.sp, color: const Color(0xFFFF5242)),
+              title: CustomText(
+                text: 'Log Out',
+                fontSize: 18.sp,
+                color: const Color(0xFFFF5242),
+              ),
+              onTap: () async {
+                await UserService().logout();
+                if (!context.mounted) return;
+                Navigator.pushNamedAndRemoveUntil(context, '/signin', (route) => false);
+              },
             ),
           ],
         ),

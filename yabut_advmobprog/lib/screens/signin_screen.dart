@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../constants.dart';
 import '../services/user_service.dart';
 import '../widgets/custom_text.dart';
@@ -19,9 +20,16 @@ class _SigninScreenState extends State<SigninScreen> {
 
   bool _isLoading = false;
   bool _obscurePassword = true;
+  // lets the user pick DummyJSON or Firebase login for enhancement 2
+  LoginType _loginType = LoginType.dummyJson;
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (_loginType == LoginType.firebase) {
+      await _loginWithFirebase();
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -41,6 +49,58 @@ class _SigninScreenState extends State<SigninScreen> {
         '/home',
         arguments: response, 
        );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login failed: ${e.toString()}')),
+      );
+    }
+  }
+
+  // Firebase login using the FirebaseAuth SDK through UserService.signIn for enhancement 2
+  Future<void> _loginWithFirebase() async {
+    setState(() => _isLoading = true);
+
+    try {
+      await _userService.signIn(
+        email: _usernameController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      final userData = await _userService.getUserData();
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      Navigator.pushReplacementNamed(
+        context,
+        '/home',
+        arguments: userData,
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      // readable messages for common Firebase login errors for enhancement 2
+      String message;
+      switch (e.code) {
+        case 'invalid-credential':
+        case 'wrong-password':
+        case 'user-not-found':
+          message = 'Incorrect email or password.';
+          break;
+        case 'invalid-email':
+          message = 'That email address is not valid.';
+          break;
+        case 'too-many-requests':
+          message = 'Too many attempts. Try again later.';
+          break;
+        default:
+          message = e.message ?? 'Login failed.';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
@@ -122,18 +182,52 @@ class _SigninScreenState extends State<SigninScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // toggle between DummyJSON and Firebase login for enhancement 2
+                      SegmentedButton<LoginType>(
+                        segments: const [
+                          ButtonSegment(
+                            value: LoginType.dummyJson,
+                            label: Text('DummyJSON'),
+                            icon: Icon(Icons.api),
+                          ),
+                          ButtonSegment(
+                            value: LoginType.firebase,
+                            label: Text('Firebase'),
+                            icon: Icon(Icons.local_fire_department_outlined),
+                          ),
+                        ],
+                        selected: {_loginType},
+                        onSelectionChanged: (selection) {
+                          setState(() {
+                            _loginType = selection.first;
+                            _usernameController.clear();
+                            _passwordController.clear();
+                          });
+                        },
+                      ),
+                      SizedBox(height: 16.h),
                       TextFormField(
                         controller: _usernameController,
+                        keyboardType: _loginType == LoginType.firebase
+                            ? TextInputType.emailAddress
+                            : TextInputType.text,
                         decoration: InputDecoration(
-                          labelText: 'Username',
-                          prefixIcon: Icon(Icons.person_outline, color: NU_BLUE),
+                          labelText: _loginType == LoginType.firebase ? 'Email' : 'Username',
+                          prefixIcon: Icon(
+                            _loginType == LoginType.firebase
+                                ? Icons.mail_outline
+                                : Icons.person_outline,
+                            color: NU_BLUE,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12.r),
                           ),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your username';
+                            return _loginType == LoginType.firebase
+                                ? 'Please enter your email'
+                                : 'Please enter your username';
                           }
                           return null;
                         },
@@ -201,6 +295,27 @@ class _SigninScreenState extends State<SigninScreen> {
                     ],
                   ),
                 ),
+              ),
+              SizedBox(height: 16.h),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CustomText(
+                    text: "Don't have an account?",
+                    fontSize: 13.sp,
+                    color: FB_LIGHT_PRIMARY,
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pushNamed(context, '/signup'),
+                    child: CustomText(
+                      text: 'Sign Up',
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.bold,
+                      color: NU_YELLOW,
+                    ),
+                  ),
+                ],
               ),
               SizedBox(height: 32.h),
             ],

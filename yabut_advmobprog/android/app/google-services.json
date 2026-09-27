@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "213726314861",
+    "project_id": "yabut-advmobprog-firebase",
+    "storage_bucket": "yabut-advmobprog-firebase.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:213726314861:android:2bdb5db943979d902dda64",
+        "android_client_info": {
+          "package_name": "com.example.yabut_advmobprog"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "213726314861-tcr0vvgd2cr7m98bb2j37o3m3me5rqep.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjwz6jJ3KjjADqapcba5oUSBmvax-BK3k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "213726314861-tcr0vvgd2cr7m98bb2j37o3m3me5rqep.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "213726314861-f10remhekmvtkcmjn3otssv9l06uphf2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.yabutAdvmobprog"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

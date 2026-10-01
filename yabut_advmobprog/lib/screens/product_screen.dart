@@ -3,6 +3,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../models/product.dart';
 import '../services/product_service.dart';
+import '../services/cart_service.dart';
+import '../constants.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/custom_text.dart';
 import 'product_detail_screen.dart';
 
@@ -30,6 +33,32 @@ class _ProductScreenState extends State<ProductScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _quickAddToCart(Product product) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(
+          content: Text('Sign in with a Firebase account to add items to your cart.'),
+        ));
+      return;
+    }
+    try {
+      await CartService().addToFirebaseCart(uid: user.uid, product: product);
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text('${product.title} added to cart'),
+          duration: const Duration(seconds: 1),
+        ));
+    } catch (e) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('Could not add to cart: $e')));
+    }
   }
 
   @override
@@ -127,12 +156,40 @@ class _ProductScreenState extends State<ProductScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
-                              child: Image.network(
-                                product.thumbnail,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                errorBuilder: (_, __, ___) =>
-                                    Icon(Icons.image, size: 24.sp),
+                              child: Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: Image.network(
+                                      product.thumbnail,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      errorBuilder: (_, __, ___) =>
+                                          Icon(Icons.image, size: 24.sp),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    right: 6.w,
+                                    bottom: 6.h,
+                                    child: Material(
+                                      color: NU_BLUE,
+                                      shape: const CircleBorder(),
+                                      elevation: 2,
+                                      child: InkWell(
+                                        customBorder: const CircleBorder(),
+                                        onTap: () => _quickAddToCart(product),
+                                        child: Padding(
+                                          padding: EdgeInsets.all(7.r),
+                                          child: Icon(
+                                            Icons.add_shopping_cart,
+                                            size: 16.sp,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             Padding(

@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:yabut_advmobprog/constants.dart';
 
+import 'cart_screen.dart';
+import 'chat_screen.dart';
 import 'product_screen.dart';
 import 'profile_screen.dart';
-import 'cart_screen.dart';
 import '../widgets/custom_text.dart';
 import '../services/user_service.dart';
 
@@ -80,8 +81,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   text: (_selectedIndex == 1)
                       ? 'My Cart'
                       : (_selectedIndex == 2)
-                          ? 'Profile'
-                          : 'Home',
+                          ? 'Messages'
+                          : (_selectedIndex == 3)
+                              ? 'Profile'
+                              : 'Home',
                   fontSize: 20.sp,
                   fontWeight: FontWeight.w600,
                 ),
@@ -99,6 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const ProductScreen(),
             // made it use the resolved logged-in userId to render user's own cart for enhancement 3
             CartScreen(userId: userId),
+            const ChatScreen(),
             ProfileScreen(userId: userId),
           ],
           onPageChanged: (page) {
@@ -109,25 +113,27 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
 
         // converted the chat button into a floating action button positioned at the bottom right for enhancement 2
-        // added an instruction to hide it automatically when _selectedIndex == 1 (CartScreen) enhancement 2
-        floatingActionButton: (_selectedIndex == 1)
+        // added an instruction to hide it automatically when _selectedIndex == 1 (CartScreen) or 2 (ChatScreen)
+        floatingActionButton: (_selectedIndex == 1 || _selectedIndex == 2)
             ? null
             : FloatingActionButton(
                 backgroundColor: NU_BLUE,
                 child: const Icon(Icons.chat, color: FB_LIGHT_PRIMARY),
                 onPressed: () {
-                  Navigator.pushNamed(context, '/chat');
+                  // Switches to the ChatScreen tab or pushes the chat route
+                  _onTappedBar(2);
                 },
               ),
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-        // made the added Cart button placed directly in the middle between Shop and Profile enhancement 1
         bottomNavigationBar: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
           showSelectedLabels: false,
           showUnselectedLabels: false,
           onTap: _onTappedBar,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.shop_2), label: 'Shop'),
             BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Cart'),
+            BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Chat'),
             BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
           ],
           currentIndex: _selectedIndex,

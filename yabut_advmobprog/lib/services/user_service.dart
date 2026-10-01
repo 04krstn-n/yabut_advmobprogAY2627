@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants.dart';
 import '../models/user.dart' as model;
 import 'package:firebase_auth/firebase_auth.dart';
+// EDIT FIX + Enhancement 1: Firestore is used to register every Firebase account in the "Users" collection
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 ValueNotifier<UserService> userService = ValueNotifier(UserService());
@@ -230,6 +232,18 @@ class UserService {
     await prefs.setString('contactNo', contactNo);
     await prefs.setString('username', username);
     await currentUser?.updateDisplayName(username);
+
+    // EDIT FIX + Enhancement 1: stores the signup details in the "Users" collection so the chat list can show and search the user's name
+    final user = currentUser;
+    if (user != null) {
+      try {
+        await _saveUserToFirestore(user, {
+          'firstName': firstName,
+          'lastName': lastName,
+          'username': username,
+        });
+      } catch (_) {}
+    }
   }
 
   // added shared helper that saves Firebase user info + token + login type for enhancement 2
@@ -243,5 +257,22 @@ class UserService {
     await prefs.setString('token', token ?? '');
     await prefs.setString('accessToken', token ?? '');
     await saveLoginType(LoginType.firebase);
+
+    // EDIT FIX + Enhancement 1: makes sure every Firebase account (even ones created before this fix) is listed in "Users" when it signs in
+    try {
+      await _saveUserToFirestore(user);
+    } catch (_) {}
+  }
+
+  // EDIT FIX + Enhancement 1: creates/merges the user's doc in the "Users" collection (doc id = Firebase uid)
+  Future<void> _saveUserToFirestore(
+    User user, [
+    Map<String, dynamic> extra = const {},
+  ]) async {
+    await FirebaseFirestore.instance.collection('Users').doc(user.uid).set({
+      'uid': user.uid,
+      'email': user.email ?? '',
+      ...extra,
+    }, SetOptions(merge: true));
   }
 }

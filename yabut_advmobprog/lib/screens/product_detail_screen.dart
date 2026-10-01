@@ -5,12 +5,143 @@ import '../models/product.dart';
 import '../widgets/custom_text.dart';
 import '../providers/theme_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../services/cart_service.dart';
 
 // added details page when clicking a product card to comply with enhancement 2
-class ProductDetailScreen extends StatelessWidget {
+class ProductDetailScreen extends StatefulWidget {
   final Product product;
 
   const ProductDetailScreen({super.key, required this.product});
+
+  @override
+  State<ProductDetailScreen> createState() => _ProductDetailScreenState();
+}
+
+class _ProductDetailScreenState extends State<ProductDetailScreen> {
+  final CartService _cartService = CartService();
+  int _quantity = 1;
+  bool _adding = false;
+
+  Product get product => widget.product;
+
+  Future<void> _addToCart() async {
+    final user = FirebaseAuth.instance.currentUser;
+    final messenger = ScaffoldMessenger.of(context);
+    if (user == null) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(
+          content: Text('Sign in with a Firebase account to add items to your cart.'),
+        ));
+      return;
+    }
+
+    setState(() => _adding = true);
+    try {
+      await _cartService.addToFirebaseCart(
+        uid: user.uid,
+        product: product,
+        quantity: _quantity,
+      );
+      if (!mounted) return;
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text('Added $_quantity × ${product.title} to your cart'),
+        ));
+    } catch (e) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('Could not add to cart: $e')));
+    } finally {
+      if (mounted) setState(() => _adding = false);
+    }
+  }
+
+  Widget _buildBottomBar(bool isDark) {
+    final outOfStock = product.stock <= 0;
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          border: Border(
+            top: BorderSide(
+              color: isDark ? Colors.white12 : Colors.black12,
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(color: isDark ? Colors.white24 : Colors.black26),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.remove),
+                    onPressed: _quantity > 1
+                        ? () => setState(() => _quantity--)
+                        : null,
+                  ),
+                  CustomText(
+                    text: '$_quantity',
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.add),
+                    onPressed: (product.stock > 0 && _quantity >= product.stock)
+                        ? null
+                        : () => setState(() => _quantity++),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: SizedBox(
+                height: 48.h,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: NU_BLUE,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                  ),
+                  onPressed: (_adding || outOfStock) ? null : () => _addToCart(),
+                  icon: _adding
+                      ? SizedBox(
+                          width: 18.w,
+                          height: 18.w,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.add_shopping_cart),
+                  label: Text(
+                    outOfStock
+                        ? 'Out of stock'
+                        : 'Add to Cart · \$${(product.price * _quantity).toStringAsFixed(2)}',
+                    style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +150,7 @@ class ProductDetailScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey[100],
+      bottomNavigationBar: _buildBottomBar(isDark),
       body: Stack(
         children: [
           // added header and product image container for design

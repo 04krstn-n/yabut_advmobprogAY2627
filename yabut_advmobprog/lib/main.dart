@@ -13,6 +13,7 @@ import 'screens/settings_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/signin_screen.dart';
 import 'screens/signup_screen.dart';
+import 'screens/chat_screen.dart';
 
 // providers
 import 'providers/theme_provider.dart';
@@ -25,7 +26,6 @@ void main() async {
       _,
     ) async {
       await dotenv.load(fileName: 'assets/.env');
-      // initialize Firebase before runApp for enhancement 1
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
@@ -52,7 +52,6 @@ class YabutAdvMobProg extends StatelessWidget {
             darkTheme: themeModel.darkTheme,
             themeMode: themeModel.isDark ? ThemeMode.dark : ThemeMode.light,
             title: 'E-Commerce App',
-            // made the app boot into the SplashScreen first for enhancement 1
             initialRoute: '/splash',
             routes: {
               '/home': (context) => const HomeScreen(),
@@ -60,6 +59,7 @@ class YabutAdvMobProg extends StatelessWidget {
               '/splash': (context) => const SplashScreen(),
               '/signin': (context) => const SigninScreen(),
               '/signup': (context) => const SignupScreen(),
+              '/chat': (context) => const ChatScreen(),
             },
           );
         },
